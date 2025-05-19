@@ -1,0 +1,9 @@
+version: "3"
+
+tasks:
+  sort:
+    desc: formats python imports
+    cmd: isort .
+  cpbot:
+    desc: starts bot
+    cmd: py ./main.py

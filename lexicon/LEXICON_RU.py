@@ -1,0 +1,23 @@
+LEXICON: dict[str, str] = {
+    "start_greeting": "Привет! Выберите кто вы 👋",
+    "role_client": "Клиент💼",
+    "role_trainer": "Тренер🏋🏽",
+    "choose_trainer": "Выбрать тренера👨‍🏫",
+    "metrics": "Метрики📊",
+    "reports": "Отчеты📝",
+    "training_plan": "План тренировок🏋️",
+    "profile": "Профиль👤",
+    "clients_list": "Список клиентов👥",
+    "create_plan": "Создать план клиенту✏️",
+    "trainers_menu": "Меню тренера",
+    "clients_menu": "Меню клиента",
+    "cancel": "Отмена❌",
+    "write_height": "Введите Ваш рост в сантиметрах📏\nПример: 183.5",
+    "write_weight": "Введите Ваш вес в килограммах⏲️\nПример: 73.2",
+    "write_fat_percent": "Введите Ваш процент жира🐷\nПример: 13",
+    "write_achievements": "Опишите Ваши спортивные достижения🏆",
+    "write_qualification": "Опишите Вашу квалификацию🎯",
+    "write_experience": "Опишите Ваш опыт💡",
+    "send_photo": "Пришлите Ваше фото📸",
+    "server_error": "🛑Ошибка сервера🛑"
+}
