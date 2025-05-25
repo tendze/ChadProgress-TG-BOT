@@ -29,6 +29,13 @@ class ChadProgressClient:
 
         return response_body.get("token")
     
+    def get_user_by_id(self, token: str, id: int):
+        data = {
+            "user-id": id
+        }
+
+        return requests.get(f"{self.base_url}/user/user", json=data, headers=self.bearer_header(token))
+    
     def create_trainer_profile(self, token: str, qualification: str, experience: str, achievement: str):
         data = {
             "qualification": qualification,
@@ -36,9 +43,15 @@ class ChadProgressClient:
             "achievement": achievement
         }
         
-        return requests.post(f"{self.base_url}/trainer/profile", json=data, headers=self.bearer_header(token))
+        return requests.post(f"{self.base_url}/user/trainers/profile", json=data, headers=self.bearer_header(token))
+    
+    def get_trainers_list(self, token: str) -> list[any]:
+        return requests.get(f"{self.base_url}/user/trainers", headers=self.bearer_header(token))
 
-    def get_trainer_profile(self, token: str):
+    def get_trainer_profile(self, token: str, trainerID: int = None):
+        if trainerID != None:
+            return requests.get(f"{self.base_url}/user/trainers/profile", json={"trainer-id": trainerID}, headers=self.bearer_header(token))
+        
         return requests.get(f"{self.base_url}/user/trainers/profile", headers=self.bearer_header(token))
 
     def get_trainers_clients(self, token: str):
@@ -67,7 +80,7 @@ class ChadProgressClient:
             "weight": weight,
             "bodyfat": bodyfat,
             "bmi": bmi,
-            "measured-at": measured_at  # строка ISO 8601
+            "measured-at": measured_at
         }
         return requests.post(f"{self.base_url}/user/clients/metrics", json=data, headers=self.bearer_header(token))
 
@@ -87,7 +100,7 @@ class ChadProgressClient:
             "trainer-id": trainer_id,
             "client-id": client_id
         }
-        return requests.get(f"{self.base_url}/user/training-plan", params=data, headers=self.bearer_header(token))
+        return requests.get(f"{self.base_url}/user/training-plan", json=data, headers=self.bearer_header(token))
 
     def add_progress_report(self, token: str, client_id: int, comments: str):
         data = {
@@ -101,10 +114,12 @@ class ChadProgressClient:
             "trainer-id": trainer_id,
             "client-id": client_id
         }
-        return requests.get(f"{self.base_url}/user/progress-reports", params=data, headers=self.bearer_header(token))
+        return requests.get(f"{self.base_url}/user/progress-reports", json=data, headers=self.bearer_header(token))
     
     def bearer_header(self, jwt: str) -> dict[str, str]:
         return {
             "Authorization": f"Bearer {jwt}",
             "Content-type": "application/json"
         }
+    
+    

@@ -5,11 +5,12 @@ from aiogram.fsm.state import default_state
 from aiogram.fsm.context import FSMContext
 
 from clients.chadprogress import ChadProgressClient
-from handlers.keyboards.start import *
+from handlers.keyboards.keyboards import *
 from lexicon.LEXICON_RU import LEXICON
 from repo.sqlite.sqlite import ChadProgressDB
 from repo.models.enum import UserRole
-from state.state import Start
+from state.start import Start
+from state.menu import Menu
 from utils.password import generate_password
 
 rt = Router()
@@ -19,9 +20,14 @@ async def start_handler(msg: Message, cp_client: ChadProgressClient, cp_db: Chad
     user = await cp_db.get_user(msg.from_user.id)
     if user:
         if user.role == UserRole.CLIENT.value:
+            await state.set_state(Menu.client_main_menu)
             await send_client_menu(msg)
         else:
+            await state.set_state(Menu.trainer_main_menu)
             await send_trainers_menu(msg)
+        
+        token = await cp_db.get_token(msg.from_user.id)
+        await state.update_data(token=token)
 
         return
     
@@ -38,7 +44,9 @@ async def choose_client_press(cb: CallbackQuery, state: FSMContext):
 
 @rt.callback_query(F.data == 'role_trainer', StateFilter(default_state))
 async def choose_trainer_press(cb: CallbackQuery, state: FSMContext):
-    await cb.message.answer(text=LEXICON['write_qualification'], reply_markup=cancel_markup)
+    sent = await cb.message.answer(text=LEXICON['write_qualification'], reply_markup=cancel_markup)
+    await state.update_data(to_delete=[sent.message_id])
+
     await cb.message.delete()
     await state.update_data(role='trainer')
     await state.set_state(Start.get_qualification_state)
@@ -112,7 +120,9 @@ async def qualification_message_answer(msg: Message, state: FSMContext):
     await state.update_data(qualification=qualification)
     await state.set_state(Start.get_experience_state)
 
-    await msg.answer(text=LEXICON['write_experience'], reply_markup=cancel_markup)
+    sent = await msg.answer(text=LEXICON['write_experience'], reply_markup=cancel_markup)
+    await state.update_data(to_delete=[sent.message_id])
+
     await msg.delete()
 
 @rt.message(StateFilter(Start.get_experience_state))
@@ -124,7 +134,8 @@ async def experience_message_answer(msg: Message, state: FSMContext):
     await state.update_data(experience=experience)
     await state.set_state(Start.get_achievements_state)
 
-    await msg.answer(text=LEXICON['write_achievements'], reply_markup=cancel_markup)
+    sent = await msg.answer(text=LEXICON['write_achievements'], reply_markup=cancel_markup)
+    await state.update_data(to_delete=[sent.message_id])
     await msg.delete()
 
 @rt.message(StateFilter(Start.get_achievements_state))
@@ -136,7 +147,8 @@ async def achievements_message_answer(msg: Message, state: FSMContext):
     await state.update_data(achievements=achievements)
     await state.set_state(Start.get_photo_state)
 
-    await msg.answer(text=LEXICON['send_photo'], reply_markup=cancel_markup)
+    sent = await msg.answer(text=LEXICON['send_photo'], reply_markup=cancel_markup)
+    await state.update_data(to_delete=[sent.message_id])
     await msg.delete()
 
 @rt.message(StateFilter(Start.get_photo_state), F.photo)
@@ -157,28 +169,29 @@ async def photo_message_answer(msg: Message, cp_client: ChadProgressClient, cp_d
         name,
         role
     )
-    await cp_db.save_user(login, token, photo_id, role)
+    await cp_db.save_user(login, password, name, token, photo_id, role)
     if role == UserRole.CLIENT.value:
         height, weight, fat_percent = data['height'], data['weight'], data['fat']
         response = cp_client.create_client_profile(token, height, weight, fat_percent)
-        if response.status_code == 200:
+        if not response.ok:
             await msg.answer(text=LEXICON['server_error'])
-        
-        
+            
+        await state.set_state(Menu.client_main_menu)
         await send_client_menu(msg)
     else:
         qualification, experience, achievements = data['qualification'], data['experience'], data['achievements']
         response = cp_client.create_trainer_profile(token, qualification, experience, achievements)
-        if response.status_code == 200:
+        if not response.ok:
             await msg.answer(text=LEXICON['server_error'])
-        
+
+        await state.set_state(Menu.trainer_main_menu)
         await send_trainers_menu(msg)
     
+    await state.update_data(token=token)
     await msg.delete()
     
 @rt.callback_query(F.data == 'cancel', StateFilter(Start))
 async def cancel_poll(cb: CallbackQuery, state: FSMContext):
-
     data = await state.get_data()
     await delete_messages(cb.message, data.get('to_delete'))
 

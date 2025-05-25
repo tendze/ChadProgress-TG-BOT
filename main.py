@@ -5,7 +5,7 @@ from bot import get_bot
 from clients.chadprogress import ChadProgressClient
 from config.config import Config
 from dispatcher import dp
-from handlers import start
+from handlers import start, menu
 from repo.sqlite.sqlite import ChadProgressDB
 
 
@@ -26,8 +26,9 @@ async def main():
     await dp.start_polling(bot)
 
 def include_routers(dp):
-    dp.include_router(
-        start.rt
+    dp.include_routers(
+        start.rt,
+        menu.rt
     )
 
 if __name__ == "__main__":

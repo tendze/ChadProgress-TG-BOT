@@ -4,6 +4,8 @@ from typing import Optional
 @dataclass
 class User:
     telegram_id: int
+    password: int
+    name: str
     role: str
     photo_id: str
     jwt_token: Optional[str] = None
